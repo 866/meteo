@@ -5,9 +5,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <sqlite3.h> 
+
 
 #define METEO 0
-
+#define VERBOSE 0
 /**
  * g++ -L/usr/lib main.cc -I/usr/include -o main -lrrd
  **/
@@ -33,8 +35,79 @@ struct message_t {
     float lux;
 };
 
+static int callback(void *NotUsed, int argc, char **argv, char **azColName) {
+   int i;
+   for(i = 0; i<argc; i++) {
+      printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+   }
+   printf("\n");
+   return 0;
+}
+
+sqlite3* opentable() {
+   char *zErrMsg = 0;
+ 
+   /* Open database */
+   sqlite3* db;
+   int rc = sqlite3_open("test.db", &db);
+   
+   if( rc ) {
+      fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+      return(0);
+   } else {
+      fprintf(stderr, "Opened database successfully\n");
+   }
+
+   
+    /* Create SQL statement */
+   const char* query = "CREATE TABLE meteo (" \
+     "timestamp INTEGER," \
+     "temperature REAL," \
+     "humidity REAL," \
+     "pressure REAL," \
+     "light REAL);";
+
+   /* Execute SQL statement */
+   rc = sqlite3_exec(db, query, callback, 0, &zErrMsg);
+
+   if( rc == SQLITE_OK ){
+      fprintf(stdout, "Table created successfully\n");
+   }
+
+   return db;
+}
+
+
+int writeValues(message_t& msg, sqlite3* db) {
+   char *zErrMsg = 0;
+   char query[500];
+   long int t = static_cast<long int>(std::time(NULL)); 
+
+   sprintf(query, "INSERT INTO meteo (timestamp, temperature, humidity, pressure, light) "  \
+         "VALUES (%li, %.1f, %.1f, %.1f, %.1f); ", t, msg.temperature, msg.humidity, 
+         msg.pressure, msg.lux);
+
+   /* Execute SQL statement */
+   int rc = sqlite3_exec(db, query, callback, 0, &zErrMsg);
+   
+   if( rc != SQLITE_OK ){
+      fprintf(stderr, "SQL error: %s\n", zErrMsg);
+      sqlite3_free(zErrMsg);
+      return -1;
+   }
+   return 0; 
+}
+
 int main(int argc, char** argv)
 {
+        sqlite3 *db;
+	// Open the table
+        db = opentable();
+        if (db == 0) {
+           fprintf(stdout, "Aborting");
+           return 0;
+        }
+  
 	// Initialize all radio related modules
 	radio.begin();
 	delay(5);
@@ -57,18 +130,22 @@ int main(int argc, char** argv)
 			// Have a peek at the data to see the header type
 			network.peek(header);
 			count++;
-			printf("Messages: %i\n", count);
+			if (VERBOSE) {
+                            printf("Messages: %i\n", count);
+			}
 			// We can only handle the Temperature type for now
 			if (header.type == METEO) {
 				// Read the message
 				network.read(header, &message, sizeof(message));
-				// Print it out
-				printf("Message received from node %i:\nTemperature: %0.1f*C\nHumidity: %0.1f%%\nPressure: %0.1f mb\nLight: %0.2f lx\n\n", header.from_node, 
-						message.temperature, message.humidity, message.pressure, message.lux);
-			} else {
-				// This is not a type we recognize
-				network.read(header, &message, sizeof(message));
-				printf("Unknown message received from node %i\n", header.from_node);
+				if (VERBOSE) {
+				   // Print it out
+				   printf("Message received from node %i:\nTemperature: %0.1f*C\nHumidity: %0.1f%%\nPressure: %0.1f mb\nLight: %0.2f lx\n\n", header.from_node, message.temperature, message.humidity, message.pressure, message.lux);
+				}
+				if (writeValues(message, db) == -1) {
+				   fprintf(stdout, "Aborting");
+                                   sqlite3_close(db);
+				   return 0;				 
+				}
 			}
 		}
 	
@@ -77,5 +154,6 @@ int main(int argc, char** argv)
 	}
 
 	// last thing we do before we end things
+        sqlite3_close(db);
 	return 0;
 }
