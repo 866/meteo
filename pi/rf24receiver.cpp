@@ -10,6 +10,7 @@
 
 #define METEO 0
 #define VERBOSE 0
+#define MAX_TRIES 5
 /**
  * g++ -L/usr/lib main.cc -I/usr/include -o main -lrrd
  **/
@@ -141,8 +142,13 @@ int main(int argc, char** argv)
 				   // Print it out
 				   printf("Message received from node %i:\nTemperature: %0.1f*C\nHumidity: %0.1f%%\nPressure: %0.1f mb\nLight: %0.2f lx\n\n", header.from_node, message.temperature, message.humidity, message.pressure, message.lux);
 				}
-				if (writeValues(message, db) == -1) {
-				   fprintf(stdout, "Aborting");
+				int failed=0;
+				while ((writeValues(message, db) == -1) && (failed <= MAX_TRIES)){
+					delay(500);
+					failed++;
+				}
+				if (failed > MAX_TRIES) {
+				   fprintf(stdout, "Aborting. Exceeded number of unsuccessful tries.");
                                    sqlite3_close(db);
 				   return 0;				 
 				}
@@ -150,7 +156,7 @@ int main(int argc, char** argv)
 		}
 	
 		// Wait a bit before we start over again
-		delay(2000);
+		delay(interval);
 	}
 
 	// last thing we do before we end things
