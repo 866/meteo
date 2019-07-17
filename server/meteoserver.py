@@ -1,6 +1,7 @@
 import sqlite3
 from datetime import datetime as dt
 from flask import Flask
+from flask import render_template
 app = Flask(__name__)
 DBPATH = "/home/pi/Programming/meteo/pi/test.db"
 
@@ -33,8 +34,9 @@ def get_latest():
         Light: {4} <br>
 </body>
     """.format(datetime, temp, humidity, pressure, light)
-    return out
+    
+    return render_template("measurements.html", date=datetime, temperature=temp, humidity=humidity, pressure=pressure, light=light)
 
 @app.route('/')
-def hello_world():
+def index():
     return get_latest()
