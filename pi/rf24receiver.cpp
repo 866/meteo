@@ -9,8 +9,9 @@
 
 
 #define METEO 0
-#define VERBOSE 0
-#define MAX_TRIES 5
+#define MOISTURE1 1
+#define VERBOSE 1
+#define MAX_TRIES 20
 /**
  * g++ -L/usr/lib main.cc -I/usr/include -o main -lrrd
  **/
@@ -36,6 +37,9 @@ struct message_t {
     float lux;
 };
 
+struct message_moisture {
+    float value;
+};
 static int callback(void *NotUsed, int argc, char **argv, char **azColName) {
    int i;
    for(i = 0; i<argc; i++) {
@@ -61,7 +65,7 @@ sqlite3* opentable() {
 
    
     /* Create SQL statement */
-   const char* query = "CREATE TABLE meteo (" \
+   const char* query_meteo = "CREATE TABLE meteo (" \
      "timestamp INTEGER," \
      "temperature REAL," \
      "humidity REAL," \
@@ -69,10 +73,22 @@ sqlite3* opentable() {
      "light REAL);";
 
    /* Execute SQL statement */
-   rc = sqlite3_exec(db, query, callback, 0, &zErrMsg);
+   rc = sqlite3_exec(db, query_meteo, callback, 0, &zErrMsg);
 
    if( rc == SQLITE_OK ){
-      fprintf(stdout, "Table created successfully\n");
+      fprintf(stdout, "Table meteo created successfully\n");
+   }
+
+    /* Create SQL statement */
+   const char* query_home = "CREATE TABLE home (" \
+     "timestamp INTEGER," \
+     "sensor integer, value REAL);";
+
+   /* Execute SQL statement */
+   rc = sqlite3_exec(db, query_home, callback, 0, &zErrMsg);
+
+   if( rc == SQLITE_OK ){
+      fprintf(stdout, "Table home created successfully\n");
    }
 
    return db;
@@ -98,6 +114,27 @@ int writeValues(message_t& msg, sqlite3* db) {
    }
    return 0; 
 }
+
+int writeValues(message_moisture& msg, int sensor, sqlite3* db) {
+   char *zErrMsg = 0;
+   char query[500];
+   long int t = static_cast<long int>(std::time(NULL)); 
+
+   sprintf(query, "INSERT INTO home (timestamp, sensor, value) "  \
+         "VALUES (%li, %d, %.0f); ", t, sensor, msg.value);
+
+   /* Execute SQL statement */
+   int rc = sqlite3_exec(db, query, callback, 0, &zErrMsg);
+   
+   if( rc != SQLITE_OK ){
+      fprintf(stderr, "SQL error: %s\n", zErrMsg);
+      sqlite3_free(zErrMsg);
+      return -1;
+   }
+   return 0; 
+}
+
+
 
 int main(int argc, char** argv)
 {
@@ -128,11 +165,13 @@ int main(int argc, char** argv)
 		while ( network.available() ) {
 			RF24NetworkHeader header;
 			message_t message;
+			message_moisture message_moisture1;
 			// Have a peek at the data to see the header type
 			network.peek(header);
 			count++;
 			if (VERBOSE) {
-                            printf("Messages: %i\n", count);
+                            printf("Messages: %i\nheader type: %d\nnode: %d\n", count, header.type, header.from_node);
+
 			}
 			// We can only handle the Temperature type for now
 			if (header.type == METEO) {
@@ -152,6 +191,23 @@ int main(int argc, char** argv)
                                    sqlite3_close(db);
 				   return 0;				 
 				}
+			}
+			else if (header.type == MOISTURE1) {
+				network.read(header, &message_moisture1, sizeof(message_moisture1));
+				if (VERBOSE) {
+					printf("Message received from node %i:\nMoisture: %0.0f\n\n", header.from_node, message_moisture1.value);
+				}
+				int failed=0;
+				while ((writeValues(message_moisture1, MOISTURE1, db) == -1) && (failed <= MAX_TRIES)){
+					delay(500);
+					failed++;
+				}
+				if (failed > MAX_TRIES) {
+				   fprintf(stdout, "Aborting. Exceeded number of unsuccessful tries.");
+                                   sqlite3_close(db);
+				   return 0;				 
+				}
+
 			}
 		}
 	
