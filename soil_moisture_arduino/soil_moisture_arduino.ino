@@ -21,8 +21,8 @@ RF24Network network(radio);
 // Pumping time in seconds
 const uint16_t pumpTime = 30;
 
-// Measure delay in seconds 
-const uint16_t 
+// Measure delay in ms 
+const uint16_t measureDelay = 1000;
 
 // Threshold below which the pump is activated
 const int moistureThreshold = 40;
@@ -83,15 +83,6 @@ void setup(void)
 void loop() {
   // Do moisture reading
   int moisture = getMoistureReading();
-  // Turn off/on the pump if we need soil humification
-  if (moisture < moistureThreshold) {
-      // Turn off the pump
-      digitalWrite(pumpSwitch, LOW);
-  } else {
-      // Turn on the pump
-      digitalWrite(pumpSwitch, HIGH);
-      delay(pumpTime);
-  }
 
  // Update network data
  network.update();
@@ -104,6 +95,20 @@ void loop() {
   } else {
     Serial.print("Message sent.\n");
   }
+
+  // Delay for successful sending
+  delay(1000);
+  
+  // Turn off/on the pump if we need soil humification
+  if (moisture < moistureThreshold) {
+      // Turn off the pump
+      digitalWrite(pumpSwitch, LOW);
+  } else {
+      // Turn on the pump
+      digitalWrite(pumpSwitch, HIGH);
+      delay(pumpTime);
+  }
+  
   /* Delay. */
-  delay(000);
+  delay(measureDelay);
 }
