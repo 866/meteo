@@ -25,7 +25,7 @@ RF24Network network(radio);
 const uint16_t pi_node = 0;
 
 // Time between checking for packets (in ms)
-const unsigned long interval = 2000;
+const unsigned long interval = 20;
 
 unsigned int count = 0;
 

@@ -1,3 +1,6 @@
+#include <nRF24L01.h>
+#include <RF24.h>
+#include <RF24_config.h>
 #include <RF24Network.h>
 #include <RF24.h>
 #include <SPI.h>
@@ -155,5 +158,5 @@ void loop() {
   }
  
     /* Delay. */
-   delay(5000); 
+   delay(120000); 
 }

@@ -40,3 +40,10 @@ def get_latest():
 @app.route('/')
 def index():
     return get_latest()
+
+@app.route('/reboot')
+def reboot():
+    import os
+    os.system("( sleep 5 ; reboot ) &")
+    return "Reboot in 5 seconds..."
+
