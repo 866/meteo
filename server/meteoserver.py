@@ -1,15 +1,19 @@
-import sqlite3
+import pymysql
 from datetime import datetime as dt
 from flask import Flask
 from flask import render_template
 app = Flask(__name__)
-DBPATH = "/home/pi/Programming/meteo/pi/test.db"
 
 def get_latest():
-    conn = sqlite3.connect(DBPATH)
+    conn = pymysql.connect('localhost', 'meteopi', 'ipoetem', 'home')
     cur = conn.cursor()
     cur.execute("""
-       select * from meteo order by timestamp desc limit 1;
+       select * 
+       from meteo 
+       where timestamp=(
+          select max(timestamp) 
+          from meteo) 
+       limit 1;
     """)
     row = cur.fetchall()[0]
     conn.close()
@@ -46,4 +50,10 @@ def reboot():
     import os
     os.system("( sleep 5 ; reboot ) &")
     return "Reboot in 5 seconds..."
+
+@app.route('/shutdown')
+def shutdown():
+    import os
+    os.system("( sleep 5 ; shutdown -P 0 ) &")
+    return "Shutdown in 5 seconds..."
 
