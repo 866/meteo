@@ -5,16 +5,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <sqlite3.h> 
+#include <mysql.h> 
 
 
 #define METEO 0
 #define MOISTURE1 1
-#define VERBOSE 1
+#define VERBOSE 0
 #define MAX_TRIES 20
-/**
- * g++ -L/usr/lib main.cc -I/usr/include -o main -lrrd
- **/
+
+using namespace std; 
+
+// MySQL variables
+MYSQL *conn, mysql;
+MYSQL_RES *res;
+MYSQL_ROW row;
 
 // CE Pin, CSN Pin, SPI Speed
 RF24 radio(RPI_BPLUS_GPIO_J8_15,RPI_BPLUS_GPIO_J8_24, BCM2835_SPI_SPEED_8MHZ);
@@ -27,6 +31,7 @@ const uint16_t pi_node = 0;
 // Time between checking for packets (in ms)
 const unsigned long interval = 20;
 
+// Number of messages sent(successful + failed)
 unsigned int count = 0;
 
 // Structure of our message
@@ -40,108 +45,60 @@ struct message_t {
 struct message_moisture {
     float value;
 };
-static int callback(void *NotUsed, int argc, char **argv, char **azColName) {
-   int i;
-   for(i = 0; i<argc; i++) {
-      printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+
+
+MYSQL* opendb() {
+   // Opens the connection to MySQL database
+   const char *server="localhost";
+   const char *user="meteopi";
+   const char *password="ipoetem";
+   const char *database="home";
+   mysql_init(&mysql);
+   conn = mysql_real_connect(&mysql, server, user, password, database, 0, 0, 0);
+   if(conn == NULL)
+   {
+       cout << mysql_error(&mysql) << endl << endl;
+      return 0;
    }
-   printf("\n");
-   return 0;
-}
-
-sqlite3* opentable() {
-   char *zErrMsg = 0;
- 
-   /* Open database */
-   sqlite3* db;
-   int rc = sqlite3_open("test.db", &db);
-   
-   if( rc ) {
-      fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
-      return(0);
-   } else {
-      fprintf(stderr, "Opened database successfully\n");
-   }
-
-   
-    /* Create SQL statement */
-   const char* query_meteo = "CREATE TABLE meteo (" \
-     "timestamp INTEGER," \
-     "temperature REAL," \
-     "humidity REAL," \
-     "pressure REAL," \
-     "light REAL);";
-
-   /* Execute SQL statement */
-   rc = sqlite3_exec(db, query_meteo, callback, 0, &zErrMsg);
-
-   if( rc == SQLITE_OK ){
-      fprintf(stdout, "Table meteo created successfully\n");
-   }
-
-    /* Create SQL statement */
-   const char* query_home = "CREATE TABLE home (" \
-     "timestamp INTEGER," \
-     "sensor integer, value REAL);";
-
-   /* Execute SQL statement */
-   rc = sqlite3_exec(db, query_home, callback, 0, &zErrMsg);
-
-   if( rc == SQLITE_OK ){
-      fprintf(stdout, "Table home created successfully\n");
-   }
-
-   return db;
+   return conn;
 }
 
 
-int writeValues(message_t& msg, sqlite3* db) {
-   char *zErrMsg = 0;
+int executeQuery(MYSQL* conn, char* query) {
+   /* Execute SQL statement */
+   int query_state = mysql_query(conn,	query);
+   if(query_state != 0){
+      cout << mysql_error(conn) << endl << endl; 
+      return -1;
+   }
+   return 0; 
+}
+
+
+int writeValues(message_t& msg, MYSQL* conn) {
    char query[500];
    long int t = static_cast<long int>(std::time(NULL)); 
-
    sprintf(query, "INSERT INTO meteo (timestamp, temperature, humidity, pressure, light) "  \
          "VALUES (%li, %.1f, %.1f, %.1f, %.1f); ", t, msg.temperature, msg.humidity, 
          msg.pressure, msg.lux);
-
-   /* Execute SQL statement */
-   int rc = sqlite3_exec(db, query, callback, 0, &zErrMsg);
-   
-   if( rc != SQLITE_OK ){
-      fprintf(stderr, "SQL error: %s\n", zErrMsg);
-      sqlite3_free(zErrMsg);
-      return -1;
-   }
-   return 0; 
+   return executeQuery(conn, query);
 }
 
-int writeValues(message_moisture& msg, int sensor, sqlite3* db) {
-   char *zErrMsg = 0;
+
+int writeValues(message_moisture& msg, int sensor, MYSQL* conn) {
    char query[500];
    long int t = static_cast<long int>(std::time(NULL)); 
-
    sprintf(query, "INSERT INTO home (timestamp, sensor, value) "  \
          "VALUES (%li, %d, %.0f); ", t, sensor, msg.value);
-
-   /* Execute SQL statement */
-   int rc = sqlite3_exec(db, query, callback, 0, &zErrMsg);
-   
-   if( rc != SQLITE_OK ){
-      fprintf(stderr, "SQL error: %s\n", zErrMsg);
-      sqlite3_free(zErrMsg);
-      return -1;
-   }
-   return 0; 
+   return executeQuery(conn, query);
 }
-
 
 
 int main(int argc, char** argv)
 {
-        sqlite3 *db;
-	// Open the table
-        db = opentable();
-        if (db == 0) {
+	// Open the database
+        MYSQL* conn = opendb();
+        if (conn == 0) {
            fprintf(stdout, "Aborting");
            return 0;
         }
@@ -153,7 +110,7 @@ int main(int argc, char** argv)
 	
 	// Print some radio details (for debug purposes)
 	radio.printDetails();
-	printf("Ready to receive...\n");
+	cout << "Ready to receive...\n";
 	
 	// Now do this forever (until cancelled by user)
 	while(1)
@@ -182,13 +139,13 @@ int main(int argc, char** argv)
 				   printf("Message received from node %i:\nTemperature: %0.1f*C\nHumidity: %0.1f%%\nPressure: %0.1f mb\nLight: %0.2f lx\n\n", header.from_node, message.temperature, message.humidity, message.pressure, message.lux);
 				}
 				int failed=0;
-				while ((writeValues(message, db) == -1) && (failed <= MAX_TRIES)){
+				while ((writeValues(message, conn) == -1) && (failed <= MAX_TRIES)){
 					delay(500);
 					failed++;
 				}
 				if (failed > MAX_TRIES) {
 				   fprintf(stdout, "Aborting. Exceeded number of unsuccessful tries.");
-                                   sqlite3_close(db);
+                                   mysql_close(conn);
 				   return 0;				 
 				}
 			}
@@ -197,14 +154,14 @@ int main(int argc, char** argv)
 				if (VERBOSE) {
 					printf("Message received from node %i:\nMoisture: %0.0f\n\n", header.from_node, message_moisture1.value);
 				}
-				int failed=0;
-				while ((writeValues(message_moisture1, MOISTURE1, db) == -1) && (failed <= MAX_TRIES)){
+				int failed = 0;
+				while ((writeValues(message_moisture1, MOISTURE1, conn) == -1) && (failed <= MAX_TRIES)) {
 					delay(500);
 					failed++;
 				}
 				if (failed > MAX_TRIES) {
 				   fprintf(stdout, "Aborting. Exceeded number of unsuccessful tries.");
-                                   sqlite3_close(db);
+                                   mysql_close(conn);
 				   return 0;				 
 				}
 
@@ -216,6 +173,6 @@ int main(int argc, char** argv)
 	}
 
 	// last thing we do before we end things
-        sqlite3_close(db);
+        mysql_close(conn);
 	return 0;
 }

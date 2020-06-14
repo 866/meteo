@@ -14,8 +14,9 @@
 prefix := /usr/local
 
 # The recommended compiler flags for the Raspberry Pi
-CCFLAGS=-Ofast -mfpu=vfp -mfloat-abi=hard -march=armv6zk -mtune=arm1176jzf-s -l sqlite3
-#CCFLAGS=
+CCFLAGS=-Ofast -mfpu=vfp -mfloat-abi=hard -march=armv6zk -mtune=arm1176jzf-s  -Isrc $$(mysql_config --cflags)
+
+LDLIBS = $$(mysql_config --libs_r) -lm 
 
 # define all programs
 PROGRAMS = rf24receiver
@@ -24,7 +25,7 @@ SOURCES = ${PROGRAMS:=.cpp}
 all: ${PROGRAMS}
 
 ${PROGRAMS}: ${SOURCES}
-	g++ ${CCFLAGS} -Wall -I../ -lrf24-bcm -lrf24network $@.cpp -o $@
+	g++ ${CCFLAGS} ${LDLIBS} -Wall -I../ -lrf24-bcm -lrf24network $@.cpp -o $@
 
 clean:
 	rm -rf $(PROGRAMS)
