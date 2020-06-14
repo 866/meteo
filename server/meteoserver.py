@@ -3,9 +3,9 @@ from datetime import datetime as dt
 from flask import Flask
 from flask import render_template
 app = Flask(__name__)
-
+host = '192.168.0.103'
 def get_latest():
-    conn = pymysql.connect('localhost', 'meteopi', 'ipoetem', 'home')
+    conn = pymysql.connect('host', 'meteopi', 'ipoetem', 'home')
     cur = conn.cursor()
     cur.execute("""
        select * 

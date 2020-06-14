@@ -49,7 +49,7 @@ struct message_moisture {
 
 MYSQL* opendb() {
    // Opens the connection to MySQL database
-   const char *server="localhost";
+   const char *server="192.168.0.103";
    const char *user="meteopi";
    const char *password="ipoetem";
    const char *database="home";
