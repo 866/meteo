@@ -2,8 +2,16 @@ import pymysql
 from datetime import datetime as dt
 from flask import Flask
 from flask import render_template
+
+
+import plotly
+import plotly.graph_objs as go
+import json
+import pandas as pd 
+
 app = Flask(__name__)
 host = '192.168.0.103'
+
 def get_latest():
     conn = pymysql.connect(host, 'meteopi', 'ipoetem', 'home')
     cur = conn.cursor()
@@ -40,6 +48,45 @@ def get_latest():
     """.format(datetime, temp, humidity, pressure, light)
     
     return render_template("measurements.html", date=datetime, temperature=temp, humidity=humidity, pressure=pressure, light=light)
+
+def get_series(series):
+    conn = pymysql.connect(host='192.168.0.103',
+                                 user='meteopi',
+                                 password='ipoetem',
+                                 db='home')
+    data = pd.read_sql(f"select from_unixtime(timestamp) as date, {series} from meteo order by timestamp desc limit 5000;", conn)
+    conn.close()
+    if series == "pressure":
+        data["pressure"] = (data["pressure"] / 1.33322387415).astype(int) 
+    return data
+    
+def create_plot(series):
+    data = get_series(series)
+    data = [
+        go.Scatter(
+            x=data['date'], # assign x as the dataframe column 'x'
+            y=data[series]
+        )
+    ]
+    graphJSON = json.dumps(data, cls=plotly.utils.PlotlyJSONEncoder)
+    return graphJSON
+
+@app.route('/temperature')
+def temperature():
+    bar = create_plot("temperature")
+    return render_template('series.html', plot=bar)
+
+@app.route('/light')
+def light():
+    bar = create_plot("light")
+    return render_template('series.html', plot=bar)
+
+@app.route('/pressure')
+def pressure():
+    bar = create_plot("pressure")
+    return render_template('series.html', plot=bar)
+
+
 
 @app.route('/')
 def index():
