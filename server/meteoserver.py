@@ -71,22 +71,12 @@ def create_plot(series):
     graphJSON = json.dumps(data, cls=plotly.utils.PlotlyJSONEncoder)
     return graphJSON
 
-@app.route('/temperature')
-def temperature():
-    bar = create_plot("temperature")
-    return render_template('series.html', plot=bar)
-
-@app.route('/light')
-def light():
-    bar = create_plot("light")
-    return render_template('series.html', plot=bar)
-
-@app.route('/pressure')
-def pressure():
-    bar = create_plot("pressure")
-    return render_template('series.html', plot=bar)
-
-
+@app.route('/graphs/<string:series>')
+def graph_series(series):
+    if series not in ["temperature", "light", "pressure"]:
+        return "There is no such graph"
+    bar = create_plot(series)
+    return render_template('series.html', plot=bar, series=series)
 
 @app.route('/')
 def index():
