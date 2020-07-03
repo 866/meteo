@@ -73,7 +73,7 @@ def create_plot(series):
 
 @app.route('/graphs/<string:series>')
 def graph_series(series):
-    if series not in ["temperature", "light", "pressure"]:
+    if series not in ["temperature", "light", "pressure", "humidity"]:
         return "There is no such graph"
     bar = create_plot(series)
     return render_template('series.html', plot=bar, series=series)
