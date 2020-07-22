@@ -10,7 +10,9 @@
 
 #define METEO 0
 #define MOISTURE1 1
-#define VERBOSE 0
+#define HUMIDITY1 2
+#define TEMPERATURE1 3
+#define VERBOSE 1
 #define MAX_TRIES 20
 
 using namespace std; 
@@ -113,7 +115,7 @@ int main(int argc, char** argv)
 	cout << "Ready to receive...\n";
 	
 	// Now do this forever (until cancelled by user)
-	while(1)
+	while(count < 100)
 	{
 		// Get the latest network info
 		network.update();
@@ -166,6 +168,41 @@ int main(int argc, char** argv)
 				}
 
 			}
+			else if (header.type == TEMPERATURE1) {
+				network.read(header, &message_moisture1, sizeof(message_moisture1));
+				if (VERBOSE) {
+					printf("Message received from node %i:\nTemperature: %0.0f\n\n", header.from_node, message_moisture1.value);
+				}
+				int failed = 0;
+				while ((writeValues(message_moisture1, TEMPERATURE1, conn) == -1) && (failed <= MAX_TRIES)) {
+					delay(500);
+					failed++;
+				}
+				if (failed > MAX_TRIES) {
+				   fprintf(stdout, "Aborting. Exceeded number of unsuccessful tries.");
+                                   mysql_close(conn);
+				   return 0;				 
+				}
+
+			}
+			else if (header.type == HUMIDITY1) {
+				network.read(header, &message_moisture1, sizeof(message_moisture1));
+				if (VERBOSE) {
+					printf("Message received from node %i:\nHUMIDITY: %0.0f\n\n", header.from_node, message_moisture1.value);
+				}
+				int failed = 0;
+				while ((writeValues(message_moisture1, HUMIDITY1, conn) == -1) && (failed <= MAX_TRIES)) {
+					delay(500);
+					failed++;
+				}
+				if (failed > MAX_TRIES) {
+				   fprintf(stdout, "Aborting. Exceeded number of unsuccessful tries.");
+                                   mysql_close(conn);
+				   return 0;				 
+				}
+
+			}
+
 		}
 	
 		// Wait a bit before we start over again

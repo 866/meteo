@@ -54,7 +54,9 @@ def get_series(series):
                                  user='meteopi',
                                  password='ipoetem',
                                  db='home')
-    data = pd.read_sql(f"select from_unixtime(timestamp) as date, {series} from meteo order by timestamp desc limit 5000;", conn)
+    data = pd.read_sql(f"""select from_unixtime(timestamp) as date, {series} from meteo
+            where {series} is not null and {series} < 1000000
+            order by timestamp desc limit 5000;""", conn)
     conn.close()
     if series == "pressure":
         data["pressure"] = (data["pressure"] / 1.33322387415).astype(int) 
