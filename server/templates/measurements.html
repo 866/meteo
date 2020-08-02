@@ -4,11 +4,15 @@
 <meta http-equiv="refresh" content="120"/>
 <body>
 The last recording: {{date}} <br>
-Temperature: {{temperature}}&#176; <br>
+Temperature: {{temperature}}&#176; C<br>
 Humidity: {{humidity}}% <br>
 Pressure: {{pressure}} mmHg <br>
 Light: {{light}} <br>
-
+--- Home meteo --- <br>
+The last recording: {{home_dt}} <br>
+Temperature: {{home_temp}}&#176; C<br>
+Humidity: {{home_humi}}% <br>
+Moisture: {{home_moisture}} <br>
 <form action="/reboot">
     <input type="submit" value="Reboot" />
 </form>

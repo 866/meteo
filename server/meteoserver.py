@@ -24,6 +24,46 @@ def get_latest():
        limit 1;
     """)
     row = cur.fetchall()[0]
+    cur.execute("""
+       select value, timestamp 
+       from home 
+       where timestamp=(
+          select max(timestamp) 
+          from home
+          where sensor=3
+          ) and sensor=3
+       limit 1;
+    """)
+    ht = cur.fetchall()[0]
+    
+    cur.execute("""
+       select value, timestamp 
+       from home 
+       where timestamp=(
+          select max(timestamp) 
+          from home
+          where sensor=2
+          ) and sensor=2
+       limit 1;
+    """)
+    hh = cur.fetchall()[0]
+    
+    cur.execute("""
+       select value, timestamp 
+       from home 
+       where timestamp=(
+          select max(timestamp) 
+          from home
+          where sensor=1
+          ) and sensor=1
+       limit 1;
+    """)
+    hm = cur.fetchall()[0]
+    
+    home_temp = int(ht[0])
+    home_humi = int(hh[0])
+    home_moisture = int(hm[0])
+    home_datetime = dt.fromtimestamp(ht[1]).strftime("%d %b %H:%M:%S")
     conn.close()
     ts = float(row[0])
     datetime = dt.fromtimestamp(ts).strftime("%d %b %H:%M:%S")
@@ -31,23 +71,9 @@ def get_latest():
     humidity = row[2]
     pressure = int(row[3] / 1.33322387415)
     light = row[4]
-    out = """
-<!DOCTYPE html>
-<html>
-<head>
-	<title>Meteo measurements</title>
-	<meta http-equiv="refresh" content="30" />
-</head>
-<body>
-        The last recording: {0} <br>
-        Temperature: {1}&#176; <br>
-        Humidity: {2}% <br>
-        Pressure: {3} mmHg <br>
-        Light: {4} <br>
-</body>
-    """.format(datetime, temp, humidity, pressure, light)
     
-    return render_template("measurements.html", date=datetime, temperature=temp, humidity=humidity, pressure=pressure, light=light)
+    return render_template("measurements.html", date=datetime, temperature=temp, humidity=humidity, pressure=pressure, light=light,
+                           home_temp=home_temp, home_dt=home_datetime, home_humi=home_humi, home_moisture=home_moisture)
 
 def get_series(series):
     conn = pymysql.connect(host='192.168.0.103',

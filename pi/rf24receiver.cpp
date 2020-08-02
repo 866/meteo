@@ -91,7 +91,7 @@ int writeValues(message_moisture& msg, int sensor, MYSQL* conn) {
    char query[500];
    long int t = static_cast<long int>(std::time(NULL)); 
    sprintf(query, "INSERT INTO home (timestamp, sensor, value) "  \
-         "VALUES (%li, %d, %.0f); ", t, sensor, msg.value);
+         "VALUES (%li, %d, %.1f); ", t, sensor, msg.value);
    return executeQuery(conn, query);
 }
 
@@ -171,7 +171,7 @@ int main(int argc, char** argv)
 			else if (header.type == TEMPERATURE1) {
 				network.read(header, &message_moisture1, sizeof(message_moisture1));
 				if (VERBOSE) {
-					printf("Message received from node %i:\nTemperature: %0.0f\n\n", header.from_node, message_moisture1.value);
+					printf("Message received from node %i:\nTemperature: %0.1f\n\n", header.from_node, message_moisture1.value);
 				}
 				int failed = 0;
 				while ((writeValues(message_moisture1, TEMPERATURE1, conn) == -1) && (failed <= MAX_TRIES)) {
@@ -188,7 +188,7 @@ int main(int argc, char** argv)
 			else if (header.type == HUMIDITY1) {
 				network.read(header, &message_moisture1, sizeof(message_moisture1));
 				if (VERBOSE) {
-					printf("Message received from node %i:\nHUMIDITY: %0.0f\n\n", header.from_node, message_moisture1.value);
+					printf("Message received from node %i:\nHUMIDITY: %0.1f\n\n", header.from_node, message_moisture1.value);
 				}
 				int failed = 0;
 				while ((writeValues(message_moisture1, HUMIDITY1, conn) == -1) && (failed <= MAX_TRIES)) {
