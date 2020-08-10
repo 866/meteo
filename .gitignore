@@ -1,2 +1,4 @@
 pi/rf24receiver
 *.db
+*.bak
+__pycache__
