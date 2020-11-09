@@ -18,7 +18,20 @@
 //#define DHTTYPE DHT21   // DHT 21 (AM2301)
 #define ALTITUDE 180
 
-#define METEO 0
+// Wind measuring parameters
+#define WIND_TIME 1000
+#define WIND_SENSOR_PIN 3
+#define WIND_DELAY 1
+
+// Define message types
+#define METEO              0
+#define MOISTURE1          1
+#define HUMIDITY1          2
+#define TEMPERATURE1       3
+#define CSS811_TEMP        4
+#define CSS811_CO2         5 
+#define CSS811_TVOC        6
+#define WIND_SPEED_SENSOR  7
 
 SFE_BMP180 pressure;
 BH1750 lightMeter;
@@ -39,19 +52,39 @@ volatile int f_wdt=1;
 const unsigned long interval = 2000;
 int counts = 0;
 
-// Structure of our message
+// Structure of meteo message
 struct message_t {
     float temp;
     float humidity;
     float pressure;
     float lux;
-};
+} meteoMsg;
 
-message_t message;
+// Structure of wind speed message
+struct message_w {
+    float windSpeed;
+} windMsg;
 
 // The network header initialized for this node
 RF24NetworkHeader header(parent_node);
 
+
+// Measures wind speed based on number of pulses in NPN sensor
+float measureWindSpeed() {
+  int total = 0, pulses = 0;
+  float val = digitalRead(WIND_SENSOR_PIN), lastval;
+  // Measure every single signal change in WIND_TIME ms
+  while (total < WIND_TIME) {
+    delay(WIND_DELAY);
+    val = digitalRead(WIND_SENSOR_PIN); //connect sensor to Analog 0
+    if (val != lastval) {
+      pulses++;
+    }
+    lastval = val;
+    total += WIND_DELAY;
+  }
+  return pulses * 1.75 / (20 * WIND_TIME / 1000);
+}
 
 
 void setup(void)
@@ -92,12 +125,8 @@ void setup(void)
 }
 
 void loop() {
-
-  
-
   // Update network data
   network.update();
-
   
   char status;
   double T,P;
@@ -149,14 +178,21 @@ void loop() {
   float t = dht.readTemperature();
   header.type = METEO;
   float l = lightMeter.readLightLevel();
-  message = (message_t){t, h, float(P), l};
-  Serial.print(t);
- 
-  // Writing the message to the network means sending it
-  if (!network.write(header, &message, sizeof(message))) {
-    Serial.print("Could not send message\n"); 
+  meteoMsg = (message_t){t, h, float(P), l};
+  
+  // Writing the message to the network
+  if (!network.write(header, &meteoMsg, sizeof(meteoMsg))) {
+    Serial.print("Could not send the meteo message\n"); 
   }
- 
-    /* Delay. */
-   delay(120000); 
+
+  // Measure the wind speed
+  float windSpeed = measureWindSpeed();
+  header.type = WIND_SPEED_SENSOR;
+  windMsg = (message_w){windSpeed};
+  // Writing the message to the network
+  if (!network.write(header, &windMsg, sizeof(windMsg))) {
+    Serial.print("Could not send the wind speed message\n"); 
+  }
+  /* Delay. */
+  delay(120000); 
 }

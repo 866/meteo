@@ -15,6 +15,7 @@
 #define CSS811_TEMP  4
 #define CSS811_CO2   5 
 #define CSS811_TVOC  6
+#define WIND_SPEED_SENSOR  7
  
 #define VERBOSE 1
 #define MAX_TRIES 20
@@ -206,59 +207,23 @@ int main(int argc, char** argv)
 				}
 
 			}
-			else if (header.type == CSS811_TEMP) {
+			else if (header.type == WIND_SPEED_SENSOR) {
 				network.read(header, &message_moisture1, sizeof(message_moisture1));
 				if (VERBOSE) {
-					printf("Message received from node %i:\nCSS811 temperature %0.1f\n\n", header.from_node, message_moisture1.value);
+					printf("Message received from node %i:\nWind speed: %0.1f\n\n", header.from_node, message_moisture1.value);
 				}
 				int failed = 0;
-				while ((writeValues(message_moisture1, CSS811_TEMP, conn) == -1) && (failed <= MAX_TRIES)) {
+				while ((writeValues(message_moisture1, HUMIDITY1, conn) == -1) && (failed <= MAX_TRIES)) {
 					delay(500);
 					failed++;
 				}
 				if (failed > MAX_TRIES) {
 				   fprintf(stdout, "Aborting. Exceeded number of unsuccessful tries.");
-                                   mysql_close(conn);
+                   mysql_close(conn);
 				   return 0;				 
 				}
 
 			}
-			else if (header.type == CSS811_CO2) {
-				network.read(header, &message_moisture1, sizeof(message_moisture1));
-				if (VERBOSE) {
-					printf("Message received from node %i:\nCO2: %0.1f\n\n", header.from_node, message_moisture1.value);
-				}
-				int failed = 0;
-				while ((writeValues(message_moisture1, CSS811_CO2, conn) == -1) && (failed <= MAX_TRIES)) {
-					delay(500);
-					failed++;
-				}
-				if (failed > MAX_TRIES) {
-				   fprintf(stdout, "Aborting. Exceeded number of unsuccessful tries.");
-                                   mysql_close(conn);
-				   return 0;				 
-				}
-
-			}
-			else if (header.type == CSS811_TVOC) {
-				network.read(header, &message_moisture1, sizeof(message_moisture1));
-				if (VERBOSE) {
-					printf("Message received from node %i:\nTVOC: %0.1f\n\n", header.from_node, message_moisture1.value);
-				}
-				int failed = 0;
-				while ((writeValues(message_moisture1, CSS811_TVOC, conn) == -1) && (failed <= MAX_TRIES)) {
-					delay(500);
-					failed++;
-				}
-				if (failed > MAX_TRIES) {
-				   fprintf(stdout, "Aborting. Exceeded number of unsuccessful tries.");
-                                   mysql_close(conn);
-				   return 0;				 
-				}
-
-			}
-
-
 		}
 	
 		// Wait a bit before we start over again
