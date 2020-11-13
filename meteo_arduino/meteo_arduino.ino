@@ -19,8 +19,8 @@
 #define ALTITUDE 180
 
 // Wind measuring parameters
-#define WIND_TIME 1000
-#define WIND_SENSOR_PIN 3
+#define WIND_TIME 1500
+#define WIND_SENSOR_PIN 4
 #define WIND_DELAY 1
 
 // Define message types

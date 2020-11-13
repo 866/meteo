@@ -153,7 +153,6 @@ int main(int argc, char** argv)
 				if (failed > MAX_TRIES) {
 				   fprintf(stdout, "Aborting. Exceeded number of unsuccessful tries.");
                                    mysql_close(conn);
-				   return 0;				 
 				}
 			}
 			else if (header.type == MOISTURE1) {
@@ -168,8 +167,6 @@ int main(int argc, char** argv)
 				}
 				if (failed > MAX_TRIES) {
 				   fprintf(stdout, "Aborting. Exceeded number of unsuccessful tries.");
-                                   mysql_close(conn);
-				   return 0;				 
 				}
 
 			}
@@ -186,7 +183,6 @@ int main(int argc, char** argv)
 				if (failed > MAX_TRIES) {
 				   fprintf(stdout, "Aborting. Exceeded number of unsuccessful tries.");
                                    mysql_close(conn);
-				   return 0;				 
 				}
 
 			}
@@ -203,7 +199,6 @@ int main(int argc, char** argv)
 				if (failed > MAX_TRIES) {
 				   fprintf(stdout, "Aborting. Exceeded number of unsuccessful tries.");
                                    mysql_close(conn);
-				   return 0;				 
 				}
 
 			}
@@ -220,7 +215,6 @@ int main(int argc, char** argv)
 				if (failed > MAX_TRIES) {
 				   fprintf(stdout, "Aborting. Exceeded number of unsuccessful tries.");
                    mysql_close(conn);
-				   return 0;				 
 				}
 
 			}
