@@ -208,7 +208,7 @@ int main(int argc, char** argv)
 					printf("Message received from node %i:\nWind speed: %0.1f\n\n", header.from_node, message_moisture1.value);
 				}
 				int failed = 0;
-				while ((writeValues(message_moisture1, HUMIDITY1, conn) == -1) && (failed <= MAX_TRIES)) {
+				while ((writeValues(message_moisture1, WIND_SPEED_SENSOR, conn) == -1) && (failed <= MAX_TRIES)) {
 					delay(500);
 					failed++;
 				}
