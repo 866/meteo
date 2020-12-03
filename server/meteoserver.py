@@ -12,6 +12,7 @@ import pandas as pd
 app = Flask(__name__)
 host = '192.168.0.100'
 
+
 def get_latest():
     conn = pymysql.connect(host, 'meteopi', 'ipoetem', 'home')
     cur = conn.cursor()
@@ -70,36 +71,34 @@ def get_latest():
           ) and sensor=7
        limit 1;
     """)
-    wind = float(cur.fetchall()[0][0])
-    
-    home_temp = int(ht[0])
-    home_humi = int(hh[0])
-    home_moisture = int(hm[0])
-    home_datetime = dt.fromtimestamp(ht[1]).strftime("%d %b %H:%M:%S")
-    conn.close()
     ts = float(row[0])
-    datetime = dt.fromtimestamp(ts).strftime("%d %b %H:%M:%S")
-    temp = row[1]
-    humidity = row[2]
-    pressure = int(row[3] / 1.33322387415)
-    light = row[4]
-    
-    return render_template("measurements.html", date=datetime, temperature=temp, humidity=humidity, pressure=pressure, light=light,
-                           home_temp=home_temp, home_dt=home_datetime, home_humi=home_humi, home_moisture=home_moisture, wind_speed=wind)
+    args = {"wind_speed": float(cur.fetchall()[0][0]), 'home_temp': int(ht[0]), 'home_humi': int(hh[0]),
+            'home_moisture': int(hm[0]), 'home_dt': dt.fromtimestamp(ht[1]).strftime("%d %b %H:%M:%S"),
+            'date': dt.fromtimestamp(ts).strftime("%d %b %H:%M:%S"), 'temperature': row[1], 'humidity': row[2],
+            'pressure': int(row[3] / 1.33322387415), 'light': row[4]}
+    conn.close()
+    return render_template("measurements.html", **args)
+
 
 def get_series(series):
     conn = pymysql.connect(host=host,
-                                 user='meteopi',
-                                 password='ipoetem',
-                                 db='home')
-    data = pd.read_sql(f"""select from_unixtime(timestamp) as date, {series} from meteo
-            where {series} is not null and {series} < 1000000
-            order by timestamp desc limit 5000;""", conn)
+                         user='meteopi',
+                         password='ipoetem',
+                         db='home')
+    if series == "windspeed":
+        data = pd.read_sql(f"""select from_unixtime(timestamp) as date, value as windspeed from home
+                where sensor=7
+                order by timestamp desc limit 5000;""", conn)
+    else:
+        data = pd.read_sql(f"""select from_unixtime(timestamp) as date, {series} from meteo
+                where {series} is not null and {series} < 1000000
+                order by timestamp desc limit 5000;""", conn)
     conn.close()
     if series == "pressure":
         data["pressure"] = (data["pressure"] / 1.33322387415).astype(int) 
     return data
-    
+
+
 def create_plot(series):
     data = get_series(series)
     data = [
@@ -111,22 +110,26 @@ def create_plot(series):
     graphJSON = json.dumps(data, cls=plotly.utils.PlotlyJSONEncoder)
     return graphJSON
 
+
 @app.route('/graphs/<string:series>')
 def graph_series(series):
-    if series not in ["temperature", "light", "pressure", "humidity"]:
+    if series not in ["temperature", "light", "pressure", "humidity", "windspeed"]:
         return "There is no such graph"
     bar = create_plot(series)
     return render_template('series.html', plot=bar, series=series)
 
+
 @app.route('/')
 def index():
     return get_latest()
+
 
 @app.route('/reboot')
 def reboot():
     import os
     os.system("( sleep 5 ; reboot ) &")
     return "Reboot in 5 seconds..."
+
 
 @app.route('/shutdown')
 def shutdown():
