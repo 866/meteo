@@ -88,7 +88,7 @@ def get_latest():
                            home_temp=home_temp, home_dt=home_datetime, home_humi=home_humi, home_moisture=home_moisture, wind_speed=wind)
 
 def get_series(series):
-    conn = pymysql.connect(host='192.168.0.103',
+    conn = pymysql.connect(host=host,
                                  user='meteopi',
                                  password='ipoetem',
                                  db='home')
@@ -104,7 +104,7 @@ def create_plot(series):
     data = get_series(series)
     data = [
         go.Scatter(
-            x=data['date'], # assign x as the dataframe column 'x'
+            x=data['date'],
             y=data[series]
         )
     ]
