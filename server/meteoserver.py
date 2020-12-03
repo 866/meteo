@@ -10,7 +10,7 @@ import json
 import pandas as pd 
 
 app = Flask(__name__)
-host = '192.168.0.103'
+host = '192.168.0.100'
 
 def get_latest():
     conn = pymysql.connect(host, 'meteopi', 'ipoetem', 'home')
@@ -59,6 +59,18 @@ def get_latest():
        limit 1;
     """)
     hm = cur.fetchall()[0]
+
+    cur.execute("""
+       select value 
+       from home 
+       where timestamp=(
+          select max(timestamp) 
+          from home
+          where sensor=7
+          ) and sensor=7
+       limit 1;
+    """)
+    wind = float(cur.fetchall()[0][0])
     
     home_temp = int(ht[0])
     home_humi = int(hh[0])
@@ -73,7 +85,7 @@ def get_latest():
     light = row[4]
     
     return render_template("measurements.html", date=datetime, temperature=temp, humidity=humidity, pressure=pressure, light=light,
-                           home_temp=home_temp, home_dt=home_datetime, home_humi=home_humi, home_moisture=home_moisture)
+                           home_temp=home_temp, home_dt=home_datetime, home_humi=home_humi, home_moisture=home_moisture, wind_speed=wind)
 
 def get_series(series):
     conn = pymysql.connect(host='192.168.0.103',
