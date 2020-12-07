@@ -13,6 +13,34 @@ app = Flask(__name__)
 host = '192.168.0.100'
 
 
+wind_query = """
+    with percentiles as (     
+        select value, PERCENT_RANK() OVER (ORDER BY value) as percentile 
+        from home where sensor=7  and timestamp > (select max(timestamp) from home where sensor=7) - 3*60*60),
+    a as (
+        select value, 0.25 as percentile 
+        from percentiles 
+        order by abs(0.25-percentile) 
+        limit 1
+    ),
+    b as (
+        select value, 0.75 as percentile 
+        from percentiles order by abs(0.75-percentile) 
+        limit 1
+    ),
+    c as (
+        select value, 1 as percentile 
+        from percentiles order by abs(1-percentile) 
+        limit 1
+    )
+
+    select * from a
+    union
+    select * from b
+    union
+    select * from c;
+"""
+
 def get_latest():
     conn = pymysql.connect(host, 'meteopi', 'ipoetem', 'home')
     cur = conn.cursor()
@@ -61,18 +89,11 @@ def get_latest():
     """)
     hm = cur.fetchall()[0]
 
-    cur.execute("""
-       select value 
-       from home 
-       where timestamp=(
-          select max(timestamp) 
-          from home
-          where sensor=7
-          ) and sensor=7
-       limit 1;
-    """)
+    cur.execute(wind_query)
+    rows = cur.fetchall()
+    wind_speeds = rows[0][0], rows[1][0], rows[2][0]
     ts = float(row[0])
-    args = {"wind_speed": float(cur.fetchall()[0][0]), 'home_temp': int(ht[0]), 'home_humi': int(hh[0]),
+    args = {"wind_speeds": wind_speeds, 'home_temp': int(ht[0]), 'home_humi': int(hh[0]),
             'home_moisture': int(hm[0]), 'home_dt': dt.fromtimestamp(ht[1]).strftime("%d %b %H:%M:%S"),
             'date': dt.fromtimestamp(ts).strftime("%d %b %H:%M:%S"), 'temperature': row[1], 'humidity': row[2],
             'pressure': int(row[3] / 1.33322387415), 'light': row[4]}
