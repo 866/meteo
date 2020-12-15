@@ -107,11 +107,19 @@ def get_series(series):
                          password='ipoetem',
                          db='home')
     if series == "windspeed":
-        data = pd.read_sql(f"""select from_unixtime(timestamp) as date, value as windspeed from home
-                where sensor=7
+        data = pd.read_sql(f"""select from_unixtime(timestamp) as date, 
+                value as windspeed from home
+                where sensor=7 and value =< 100 and value >= 0
+                order by timestamp desc limit 5000;""", conn)
+    elif series.startswith("moisture"):
+        sens_num = series.split("_")[1]
+        data = pd.read_sql(f"""select from_unixtime(timestamp) as date, 
+                value as moisture_1 from home
+                where sensor={sens_num} and value < 2000 and value >= 0
                 order by timestamp desc limit 5000;""", conn)
     else:
-        data = pd.read_sql(f"""select from_unixtime(timestamp) as date, {series} from meteo
+        data = pd.read_sql(f"""select from_unixtime(timestamp) as date, 
+                {series} from meteo
                 where {series} is not null and {series} < 1000000
                 order by timestamp desc limit 5000;""", conn)
     conn.close()
@@ -134,7 +142,8 @@ def create_plot(series):
 
 @app.route('/graphs/<string:series>')
 def graph_series(series):
-    if series not in ["temperature", "light", "pressure", "humidity", "windspeed"]:
+    if series not in ["temperature", "light", "pressure", "humidity",
+                      "windspeed", "moisture_1"]:
         return "There is no such graph"
     bar = create_plot(series)
     return render_template('series.html', plot=bar, series=series)
