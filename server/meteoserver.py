@@ -109,7 +109,7 @@ def get_series(series):
     if series == "windspeed":
         data = pd.read_sql(f"""select from_unixtime(timestamp) as date, 
                 value as windspeed from home
-                where sensor=7 and value =< 100 and value >= 0
+                where sensor=7 and value <= 100 and value >= 0
                 order by timestamp desc limit 5000;""", conn)
     elif series.startswith("moisture"):
         sens_num = series.split("_")[1]
