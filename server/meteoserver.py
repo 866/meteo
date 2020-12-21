@@ -111,10 +111,10 @@ def get_series(series):
                 value as windspeed from home
                 where sensor=7 and value <= 100 and value >= 0
                 order by timestamp desc limit 5000;""", conn)
-    elif series.startswith("moisture"):
+    elif series.startswith("homesensor"):
         sens_num = series.split("_")[1]
         data = pd.read_sql(f"""select from_unixtime(timestamp) as date, 
-                value as moisture_1 from home
+                value as {series} from home
                 where sensor={sens_num} and value < 2000 and value >= 0
                 order by timestamp desc limit 5000;""", conn)
     else:
@@ -143,7 +143,7 @@ def create_plot(series):
 @app.route('/graphs/<string:series>')
 def graph_series(series):
     if series not in ["temperature", "light", "pressure", "humidity",
-                      "windspeed", "moisture_1"]:
+                      "windspeed"] and not series.startswith("homesensor"):
         return "There is no such graph"
     bar = create_plot(series)
     return render_template('series.html', plot=bar, series=series)
