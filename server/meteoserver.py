@@ -16,7 +16,9 @@ host = '192.168.0.100'
 wind_query = """
     with percentiles as (     
         select value, PERCENT_RANK() OVER (ORDER BY value) as percentile 
-        from home where sensor=7  and timestamp > (select max(timestamp) from home where sensor=7) - 3*60*60),
+        from home where sensor=7  and 
+        timestamp > (select max(timestamp) from home where sensor=7) - 3*60*60 and 
+        value < 100),
     a as (
         select value, 0.25 as percentile 
         from percentiles 
