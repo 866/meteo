@@ -122,7 +122,8 @@ def get_series(series):
     else:
         data = pd.read_sql(f"""select from_unixtime(timestamp) as date, 
                 {series} from meteo
-                where {series} is not null and {series} < 1000000
+                where {series} is not null and {series} < 1000000 and 
+                {series} > -50
                 order by timestamp desc limit 5000;""", conn)
     conn.close()
     if series == "pressure":
