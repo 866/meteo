@@ -2,16 +2,24 @@ import pymysql
 from datetime import datetime as dt
 from flask import Flask
 from flask import render_template
+from flask_caching import Cache
+from apscheduler.schedulers.background import BackgroundScheduler
 
-
+import requests
 import plotly
 import plotly.graph_objs as go
 import json
 import pandas as pd 
 
-app = Flask(__name__)
-host = '192.168.0.100'
+config = {
+    "DEBUG": True,          # some Flask specific configs
+    "CACHE_TYPE": "SimpleCache",  # Flask-Caching related configs
+    "CACHE_DEFAULT_TIMEOUT": 300
+}
 
+cache = Cache(config={'CACHE_TYPE': 'SimpleCache'})
+host = '192.168.0.100'
+app = Flask(__name__)
 
 wind_query = """
     with percentiles as (     
@@ -43,6 +51,7 @@ wind_query = """
     select * from c;
 """
 
+@cache.cached(timeout=120)
 def get_latest():
     conn = pymysql.connect(host, 'meteopi', 'ipoetem', 'home')
     cur = conn.cursor()
@@ -124,7 +133,7 @@ def get_series(series):
                 {series} from meteo
                 where {series} is not null and {series} < 1000000 and 
                 {series} > -50
-                order by timestamp desc limit 5000;""", conn)
+                order by timestamp desc limit 15000;""", conn)
     conn.close()
     if series == "pressure":
         data["pressure"] = (data["pressure"] / 1.33322387415).astype(int) 
@@ -157,6 +166,10 @@ def index():
     return get_latest()
 
 
+def fake_latest_request():
+    requests.get("http://192.168.0.100/")
+
+
 @app.route('/reboot')
 def reboot():
     import os
@@ -170,3 +183,7 @@ def shutdown():
     os.system("( sleep 5 ; shutdown -P 0 ) &")
     return "Shutdown in 5 seconds..."
 
+sched = BackgroundScheduler(daemon=True)
+sched.add_job(fake_latest_request,'interval', seconds=60)
+sched.start()
+cache.init_app(app)
