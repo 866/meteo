@@ -51,7 +51,7 @@ wind_query = """
     select * from c;
 """
 
-@cache.cached(timeout=120)
+@cache.cached(timeout=300)
 def get_latest():
     conn = pymysql.connect(host, 'meteopi', 'ipoetem', 'home')
     cur = conn.cursor()
