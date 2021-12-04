@@ -1,6 +1,7 @@
 import pymysql
 from datetime import datetime as dt
 from flask import Flask
+from flask import send_file
 from flask import render_template
 from flask_caching import Cache
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -112,6 +113,19 @@ def get_latest():
     return render_template("measurements.html", **args)
 
 
+@app.route('/download/meteo')
+def download_meteo_file():
+    conn = pymysql.connect(host=host,
+                         user='meteopi',
+                         password='ipoetem',
+                         db='home')
+    data = pd.read_sql("select * from meteo;", conn)
+    path = "/tmp/meteo_data.csv.gz"
+    data.to_csv(path, index=False, compression="gzip")
+    conn.close()
+    return send_file(path, as_attachment=True)
+
+
 def get_series(series):
     conn = pymysql.connect(host=host,
                          user='meteopi',
@@ -137,7 +151,7 @@ def get_series(series):
     conn.close()
     if series == "pressure":
         data["pressure"] = (data["pressure"] / 1.33322387415).astype(int) 
-    return data
+    return data 
 
 
 def create_plot(series):

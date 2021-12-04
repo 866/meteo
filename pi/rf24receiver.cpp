@@ -120,7 +120,7 @@ int main(int argc, char** argv)
 	cout << "Ready to receive...\n";
 	
 	// Now do this forever (until cancelled by user)
-	while(count < 500)
+	while(1)
 	{
 		// Get the latest network info
 		network.update();
