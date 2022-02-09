@@ -2,21 +2,42 @@
 <head>
 <title>Meteo measurements</title>
 <meta http-equiv="refresh" content="120"/>
+<style>
+.post-container{
+    margin: 20px 20px 0 0;
+    border: None;
+}
+
+.post-thumb img {
+    float: left;
+}
+
+.post-content {
+    float: left;
+}
+</style>
 <body>
-The last recording: {{date}} <br>
-Temperature: {{temperature}}&#176; C<br>
-Humidity: {{humidity}}% <br>
-Pressure: {{pressure}} mmHg <br>
-Light: {{light}} <br>
-Wind: {{wind_speeds[0]}} - {{wind_speeds[1]}} m/s ({{wind_speeds[2]}} m/s max) <br>
---- Home meteo --- <br>
-The last recording: {{home_dt}} <br>
-Temperature: {{home_temp}}&#176; C<br>
-Humidity: {{home_humi}}% <br>
-Moisture: {{home_moisture}} <br>
-<form action="/reboot">
-    <input type="submit" value="Reboot" />
-</form>
+<div class="post-container">
+<div class="post-thumb">
+	<img src="https://styles.redditmedia.com/t5_scu5z/styles/communityIcon_hlitt74gcl221.jpg?format=pjpg&s=2cbc1b1346a0420194d895aaa022fb0b74a829ef"
+></div>
+<div class="post-content">
+	<h4>Welcome to Victor's meteostation</h4>
+		<p>
+		The last recording: {{date}} <br>
+		Temperature: {{temperature}}&#176; C<br>
+		Humidity: {{humidity}}% <br>
+		Pressure: {{pressure}} mmHg <br>
+		Light: {{light}} <br>
+		Wind: {{wind_speeds[0]}} - {{wind_speeds[1]}} m/s ({{wind_speeds[2]}} m/s max) <br>
+		--- Home meteo --- <br>
+		The last recording: {{home_dt}} <br>
+		Temperature: {{home_temp}}&#176; C<br>
+		Humidity: {{home_humi}}% <br>
+		Moisture: {{home_moisture}} <br>
+		</p>
+	</div>
+</div>
 </body>
 </html>
                 

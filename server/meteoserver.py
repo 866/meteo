@@ -20,7 +20,7 @@ config = {
 
 cache = Cache(config={'CACHE_TYPE': 'SimpleCache'})
 host = '192.168.0.100'
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='/static')
 
 wind_query = """
     with percentiles as (     
@@ -175,9 +175,14 @@ def graph_series(series):
     return render_template('series.html', plot=bar, series=series)
 
 
+@app.route('/meteo')
+def meteo():
+    return get_latest()
+
+
 @app.route('/')
 def index():
-    return get_latest()
+    return render_template('main_page.html')
 
 
 def fake_latest_request():
@@ -187,14 +192,14 @@ def fake_latest_request():
 @app.route('/reboot')
 def reboot():
     import os
-    os.system("( sleep 5 ; reboot ) &")
+#    os.system("( sleep 5 ; reboot ) &")
     return "Reboot in 5 seconds..."
 
 
 @app.route('/shutdown')
 def shutdown():
     import os
-    os.system("( sleep 5 ; shutdown -P 0 ) &")
+#   os.system("( sleep 5 ; shutdown -P 0 ) &")
     return "Shutdown in 5 seconds..."
 
 sched = BackgroundScheduler(daemon=True)

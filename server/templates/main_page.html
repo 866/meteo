@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial;
+  font-size: 17px;
+}
+
+#floatingman {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  min-width: 100%;
+  min-height: 100%;
+}
+
+.content {
+  position: fixed;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  color: #f1f1f1;
+  width: 100%;
+  padding: 20px;
+  overflow: auto
+}
+
+.post-content {
+    margin-left: 12%;
+}
+
+.post-thumb {
+    position: relative;
+    float: left
+}
+.post-thumb img {
+    display: block
+}
+
+.fa {
+  padding: 10px;
+  font-size: 20px;
+  width: 40px;
+  text-align: center;
+  text-decoration: none;
+  margin: 5px 2px;
+  border-radius: 50%;
+  align: left
+}
+
+.fa:hover {
+    opacity: 0.7;
+}
+
+.fa-facebook {
+  background: #333333;
+  color: white;
+}
+
+.fa-linkedin {
+  background: #333333;
+  color: white;
+}
+
+.fa-youtube {
+  background: #333333;
+  color: white;
+}
+
+.fa-instagram {
+  background: #333333;
+  color: white;
+}
+
+.fa-telegram {
+  background: #333333;
+  color: white;
+}
+
+.contacts {
+  float: right;
+  clear: right;
+}
+
+</style>
+</head>
+<body>
+
+<!-- The video -->
+<video autoplay muted loop id="floatingman">
+  <source src="{{ url_for('static',filename='assets/thedeadsea_lq.mp4') }}" type="video/mp4">
+</video>
+
+<!-- Optional: some overlay text to describe the video -->
+<div class="content">
+    <div class="post-thumb"><img src="{{ url_for('static',filename='assets/photo.jpg') }}" class="w3-circle"/>
+  </div>
+  <div class="post-content">
+	  <h1>¡Hi there!</h1>
+	  <p>I am Víctor Paslay - a human being, a traveler, a software engineer and a data scientist. I have over 7 years of commercial experience in machine learning and data science. Also, I have visited more than 30 countries, I climbed 6 km mountain and I love outdoor activities. Let's keep in touch!</p>
+   </div>
+<div class="contacts">
+	<a href="https://www.linkedin.com/in/victor-paslay-398122115/" class="fa fa-linkedin"></a>
+	<a href="https://www.facebook.com/comrazvictor/" class="fa fa-facebook"></a>
+	<a href="https://www.youtube.com/channel/UC7kVUPGpjlw8ynF5DODjS-w" class="fa fa-youtube"></a>
+	<a href="https://www.instagram.com/fully_convolutional_neural_net/" class="fa fa-instagram"></a>
+	<a href="https://t.me/victorpaslay" class="fa fa-telegram"></a>
+</div>
+</div>
+</html>
